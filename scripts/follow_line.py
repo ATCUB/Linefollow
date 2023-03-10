@@ -39,13 +39,13 @@ class LineDetect:
         Server(LineDetectPIDConfig, self.dynamic_reconfigure_callback)
         self.dyn_client = Client("LineDetect", timeout=60)
         self.scale = 1000
-        self.divide = 2
+        self.divide = 1.2
         self.FollowLinePID = (60, 0, 20)
         self.linear = 0.4
         self.LaserAngle = 30
         self.ResponseDist = 0.55
         self.PID_init()
-        self.sub_scan = rospy.Subscriber('/scan', LaserScan, self.registerScan, queue_size=1)
+        #self.sub_scan = rospy.Subscriber('/scan', LaserScan, self.registerScan, queue_size=1)
         self.pub_rgb = rospy.Publisher("/linefollw/rgb", Image, queue_size=1)
         self.pub_Buzzer = rospy.Publisher('/Buzzer', Bool, queue_size=1)
         if self.VideoSwitch == False:
