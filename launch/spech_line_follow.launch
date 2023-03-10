@@ -1,0 +1,8 @@
+<launch>
+    <arg name="VideoSwitch" default="false"/>
+    <arg name="img_flip" default="false"/>
+    <include file="$(find rplidar_ros)/launch/rplidar.launch"/>
+    <include file="$(find yahboomcar_ctrl)/launch/yahboom_joy.launch"/>
+    <include file="$(find yahboomcar_bringup)/launch/yahboomcar.launch"/>
+    <!--node name="SpechLineDetect" pkg="yahboomcar_linefollw" type="speech_follow_line.py" output="screen" required="true" /-->
+</launch>
