@@ -120,10 +120,10 @@ class color_follow:
         self.Center_y = 0
         self.Center_r = 0
 
-    def line_follow(self, rgb_img, hsv_msg):
+    def line_follow(self, divide, rgb_img, hsv_msg):
         height, width = rgb_img.shape[:2]
         img = rgb_img.copy()
-        img[0:int(height / 2), 0:width] = 0
+        img[0:int(height / divide), 0:width] = 0
         # 将图像转换为HSV。
         # Convert the image to HSV.
         hsv_img = cv.cvtColor(img, cv.COLOR_BGR2HSV)

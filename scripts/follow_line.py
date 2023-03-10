@@ -39,6 +39,7 @@ class LineDetect:
         Server(LineDetectPIDConfig, self.dynamic_reconfigure_callback)
         self.dyn_client = Client("LineDetect", timeout=60)
         self.scale = 1000
+        self.divide = 2
         self.FollowLinePID = (60, 0, 20)
         self.linear = 0.4
         self.LaserAngle = 30
@@ -100,7 +101,7 @@ class LineDetect:
             if os.path.exists(self.hsv_text): self.hsv_range = read_HSV(self.hsv_text)
             else: self.Track_state = 'init'
         if self.Track_state != 'init' and len(self.hsv_range) != 0:
-            rgb_img, binary, self.circle = self.color.line_follow(rgb_img, self.hsv_range)
+            rgb_img, binary, self.circle = self.color.line_follow(self.divide, rgb_img, self.hsv_range)
             if self.dyn_update == True:
                 write_HSV(self.hsv_text, self.hsv_range)
                 params = {'Hmin': self.hsv_range[0][0], 'Hmax': self.hsv_range[1][0],
@@ -183,6 +184,7 @@ class LineDetect:
         self.FollowLinePID = (config['Kp'], config['Ki'], config['Kd'])
         self.hsv_range = ((config['Hmin'], config['Smin'], config['Vmin']),
                           (config['Hmax'], config['Smax'], config['Vmax']))
+        self.divide = config['divide']
         write_HSV(self.hsv_text, self.hsv_range)
         print ("HSV: ", self.hsv_range)
         self.PID_init()
