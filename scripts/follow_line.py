@@ -4,6 +4,7 @@ import os
 import threading
 import math
 import rospkg
+import numpy as np
 from follow_common import *
 from std_msgs.msg import Bool
 from geometry_msgs.msg import Twist
@@ -11,6 +12,9 @@ from dynamic_reconfigure.server import Server
 from dynamic_reconfigure.client import Client
 from sensor_msgs.msg import CompressedImage, LaserScan, Image
 from yahboomcar_linefollw.cfg import LineDetectPIDConfig
+from matplotlib import pyplot as plt
+
+
 # RED: 0, 85, 126, 9, 253, 255
 RAD2DEG = 180 / math.pi
 
@@ -23,6 +27,7 @@ class LineDetect:
         self.hsv_range = ()
         self.Roi_init = ()
         self.warning = 1
+        self.save_flag=0 
         self.Start_state = True
         self.dyn_update = False
         self.Buzzer_state = False
@@ -41,6 +46,8 @@ class LineDetect:
         self.scale = 1000
         self.divide = 1.2
         self.FollowLinePID = (60, 0, 20)
+        self.flag = [0,0,0,0,0]
+        self.crossflag=0
         self.linear = 0.4
         self.LaserAngle = 30
         self.ResponseDist = 0.55
@@ -101,7 +108,7 @@ class LineDetect:
             if os.path.exists(self.hsv_text): self.hsv_range = read_HSV(self.hsv_text)
             else: self.Track_state = 'init'
         if self.Track_state != 'init' and len(self.hsv_range) != 0:
-            rgb_img, binary, self.circle = self.color.line_follow(self.divide, rgb_img, self.hsv_range)
+            rgb_img, binary, self.circle = self.color.line_follow(self.divide, rgb_img, self.hsv_range)     
             if self.dyn_update == True:
                 write_HSV(self.hsv_text, self.hsv_range)
                 params = {'Hmin': self.hsv_range[0][0], 'Hmax': self.hsv_range[1][0],
@@ -116,6 +123,23 @@ class LineDetect:
             if self.Start_state == True:
                 self.ros_ctrl.pub_cmdVel.publish(Twist())
                 self.Start_state = False
+        a =int(640/self.divide)
+        interval = 480/5
+        for i in  range(5):
+            c=np.sum(binary[500:640,i*interval:(i+1)*interval])
+            #print(binary[i*interval:(i+1)*interval,639])  
+            #print(c)
+            if c>=1:    
+                self.flag[i]=1
+                flag = self.flag[i]
+                print("flag ",str(i),"is on")
+            else:
+                self. flag[i]=0
+        if self.flag[1]==1 and self.flag[2]==1 and self.flag[3] ==1:
+            crossflag = 1
+            print("The fuck cross!")
+        else:
+            crossflag = 0
         return rgb_img, binary
 
     def onMouse(self, event, x, y, flags, param):
@@ -138,7 +162,7 @@ class LineDetect:
                 self.Start_state = False
             return
         self.Start_state = True
-        if color_radius == 0: self.ros_ctrl.pub_cmdVel.publish(Twist())
+        if color_radius == 0: self.ros_ctrl.pub_cmdVel.publish(Twist()) 
         else:
             twist = Twist()
             b = Bool()
@@ -200,12 +224,12 @@ class LineDetect:
         # if we already have a last scan to compare to:
         for i in range(len(ranges)):
             angle = (scan_data.angle_min + scan_data.angle_increment * i) * RAD2DEG
-            # if angle > 90: print "i: {},angle: {},dist: {}".format(i, angle, scan_data.ranges[i])
+            # if angle > 90: print "i: {},angle: {},dist: {}".format(i, angle, scan_data.ranges[i])500:640
             # 通过清除不需要的扇区的数据来保留有效的数据
             if abs(angle) > (180 - self.LaserAngle):
                 if ranges[i] < self.ResponseDist: self.warning += 1
 
-
+    
 if __name__ == '__main__':
     line_detect = LineDetect()
     if line_detect.VideoSwitch==False:rospy.spin()
@@ -224,8 +248,10 @@ if __name__ == '__main__':
             end = time.time()
             fps = 1 / (end - start)
             text = "FPS : " + str(int(fps))
+            cv.rectangle(binary, (500, 384), (640, 480), [255, 255, 255], 2)
             cv.putText(frame, text, (30, 30), cv.FONT_HERSHEY_SIMPLEX, 0.6, (100, 200, 200), 1)
-            if len(binary) != 0: cv.imshow('frame', ManyImgs(1, ([frame, binary])))
+            if len(binary) != 0: 
+                cv.imshow('frame', ManyImgs(1, ([frame, binary])))
             else:cv.imshow('frame', frame)
             if action == ord('q') or action == 113: break
         capture.release()
